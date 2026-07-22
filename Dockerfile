@@ -1,6 +1,6 @@
 FROM node:22-alpine AS base
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
-    && apk add --no-cache openssl
+    && apk add --no-cache openssl tzdata
 
 FROM base AS deps
 WORKDIR /app
