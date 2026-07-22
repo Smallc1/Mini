@@ -1,0 +1,44 @@
+{
+  "name": "mini-mall",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack --hostname 0.0.0.0 --port 3001",
+    "build": "prisma generate && next build --webpack",
+    "start": "next start --hostname 0.0.0.0 --port 3001",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:accounts": "tsx prisma/account-seed.ts",
+    "db:catalog": "tsx prisma/catalog-seed.ts",
+    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
+    "prod:setup": "prisma db push && tsx prisma/production-seed.ts",
+    "prod:admin": "tsx prisma/production-seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "next": "16.2.10",
+    "next-auth": "5.0.0-beta.31",
+    "nodemailer": "^7.0.13",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.2",
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "22.10.5",
+    "@types/nodemailer": "^7.0.12",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "prisma": "5.22.0",
+    "tailwindcss": "4.3.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

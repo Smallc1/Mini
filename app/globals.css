@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+html {
+  background: var(--background);
+  color-scheme: light;
+  max-width: 100%;
+  overflow-x: clip;
+  font-size: 16px;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans SC", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  background-image:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 32%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+img, video, canvas, svg {
+  max-width: 100%;
+}
+
+input, select, textarea, button {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  body {
+    background-image: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+}
+
+@media (min-width: 768px) {
+  html {
+    /* Reference image uses 1920 physical pixels at 125% display scaling: 1rem = 20px. */
+    font-size: calc(100vw / 96);
+  }
+}
+
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}

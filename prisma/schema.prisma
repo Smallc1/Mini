@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite does not support native enums in Prisma 5.
+// Role values: "USER" | "ADMIN" | "OWNER" (site owner)
+// OrderStatus values: "PENDING" | "PAID" | "SHIPPED" | "CANCELLED"
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  phone        String?    @unique
+  name         String?
+  passwordHash String
+  role         String     @default("USER")
+  isDisabled   Boolean    @default(false)
+  sessionVersion Int      @default(0)
+  balance      Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  cartItems    CartItem[]
+  orders       Order[]
+  addresses    Address[]
+  notifications Notification[]
+  sentMessages SupportMessage[] @relation("MessageSender")
+  supportMessages SupportMessage[] @relation("SupportOwner")
+  manualPayments ManualPayment[]
+  passwordResetCodes PasswordResetCode[]
+}
+
+model PasswordResetCode {
+  id          String   @id
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  consumedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  recipient   User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  content     String
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([recipientId, isRead, createdAt])
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("SupportOwner", fields: [userId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  content     String
+  readByAdmin Boolean  @default(false)
+  readByUser  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  phone     String
+  address   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  catalogKind String @default("LEGACY")
+  parentSlug String?
+  source String @default("SYSTEM")
+  products Product[]
+
+  @@index([catalogKind, parentSlug])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String
+  price       Int // stored in cents
+  imageUrl    String
+  stock       Int         @default(0)
+  isActive    Boolean     @default(true)
+  categoryId  String
+  departmentSlug String?
+  subcategoryName String?
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([departmentSlug, subcategoryName])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String      @default("PENDING")
+  total     Int // stored in cents
+  // shipping snapshot
+  fullName  String
+  address   String
+  phone     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  paidAt    DateTime?
+  paymentMethod String?
+  refundType   String?
+  refundReason String?
+  refundStatus String?
+  refundReply  String?
+  refundReviewedByName String?
+  refundReviewedByRole String?
+  refundReviewedAt     DateTime?
+  adminUnread  Boolean   @default(false)
+  userUnread   Boolean   @default(false)
+  items     OrderItem[]
+  manualPayments ManualPayment[]
+
+  @@index([userId])
+}
+
+// Personal QR-code payments require manual administrator verification.
+model ManualPayment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind        String   // "ORDER" | "RECHARGE"
+  provider    String   // "ALIPAY" | "WECHAT"
+  amount      Int
+  status      String   @default("CREATED") // "CREATED" | "SUBMITTED" | "APPROVED" | "REJECTED"
+  createdAt   DateTime @default(now())
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedByName String?
+  reviewedByRole String?
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([orderId])
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  name            String // snapshot of product name
+  priceAtPurchase Int // cents, snapshot
+  quantity        Int
+
+  @@index([orderId])
+}
