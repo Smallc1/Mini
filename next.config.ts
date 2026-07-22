@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+// All server-rendered business timestamps are displayed in Beijing time,
+// independently of the host machine/container timezone.
+process.env.TZ = "Asia/Shanghai";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   experimental: {

@@ -129,7 +129,7 @@ export default function AdminProductTable({ products }: { products: ProductRow[]
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-500">
-                  {new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" }).format(new Date(product.createdAt))}
+                  {new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeZone: "Asia/Shanghai" }).format(new Date(product.createdAt))}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-3">

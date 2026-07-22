@@ -2,7 +2,7 @@
 
 import ProductImage from "@/app/components/ProductImage";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { updateCartItem, removeCartItem } from "./actions";
@@ -23,10 +23,16 @@ type Item = {
 export default function CartItemRow({ item, selected, onSelectedChange }: { item: Item; selected: boolean; onSelectedChange: (checked: boolean) => void }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [quantityInput, setQuantityInput] = useState(String(item.quantity));
   const router = useRouter();
+
+  useEffect(() => {
+    setQuantityInput(String(item.quantity));
+  }, [item.quantity]);
 
   function change(quantity: number) {
     setError(null);
+    setQuantityInput(String(quantity));
     startTransition(async () => {
       const result = await updateCartItem(item.id, quantity);
       if (result?.error) {
@@ -38,6 +44,26 @@ export default function CartItemRow({ item, selected, onSelectedChange }: { item
       );
       router.refresh();
     });
+  }
+
+  function adjust(amount: number) {
+    const current = Number.parseInt(quantityInput, 10) || item.quantity;
+    change(Math.min(item.product.stock, Math.max(1, current + amount)));
+  }
+
+  function editQuantity(value: string) {
+    if (value === "") {
+      setQuantityInput("");
+      return;
+    }
+    if (!/^\d+$/.test(value)) return;
+    setQuantityInput(String(Math.min(item.product.stock, Math.max(1, Number.parseInt(value, 10)))));
+  }
+
+  function submitQuantity() {
+    const quantity = Math.min(item.product.stock, Math.max(1, Number.parseInt(quantityInput, 10) || item.quantity));
+    setQuantityInput(String(quantity));
+    if (quantity !== item.quantity) change(quantity);
   }
 
   function remove() {
@@ -84,19 +110,38 @@ export default function CartItemRow({ item, selected, onSelectedChange }: { item
 
       <div className="ml-6 flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm sm:ml-0">
         <button
-          onClick={() => change(item.quantity - 1)}
-          disabled={pending}
+          onClick={() => adjust(-10)}
+          disabled={pending || item.quantity <= 1}
           className="h-9 w-9 text-lg leading-none transition hover:bg-amber-50 hover:text-orange-600 disabled:opacity-50"
-          aria-label="减少数量"
+          title="减少 10 件"
+          aria-label="减少 10 件"
         >
           −
         </button>
-        <span className="w-9 border-x border-slate-200 text-center text-sm font-semibold leading-9">{item.quantity}</span>
+        <div className="grid h-9 w-12 grid-rows-[10px_1fr_10px] border-x border-slate-200">
+          <button type="button" onClick={() => adjust(1)} disabled={pending || item.quantity >= item.product.stock} title="增加 1 件" aria-label="增加 1 件" className="flex items-center justify-center text-[8px] leading-none hover:bg-amber-50 hover:text-orange-600 disabled:opacity-50">▲</button>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={quantityInput}
+            onChange={(event) => editQuantity(event.target.value)}
+            onBlur={submitQuantity}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.currentTarget.blur();
+            }}
+            disabled={pending}
+            aria-label={`${item.product.name} 的购买数量`}
+            className="h-full min-w-0 bg-transparent px-0 text-center text-sm font-semibold leading-none tabular-nums outline-none"
+          />
+          <button type="button" onClick={() => adjust(-1)} disabled={pending || item.quantity <= 1} title="减少 1 件" aria-label="减少 1 件" className="flex items-center justify-center text-[8px] leading-none hover:bg-amber-50 hover:text-orange-600 disabled:opacity-50">▼</button>
+        </div>
         <button
-          onClick={() => change(item.quantity + 1)}
+          onClick={() => adjust(10)}
           disabled={pending || item.quantity >= item.product.stock}
           className="h-9 w-9 text-lg leading-none transition hover:bg-amber-50 hover:text-orange-600 disabled:opacity-50"
-          aria-label="增加数量"
+          title="增加 10 件"
+          aria-label="增加 10 件"
         >
           +
         </button>
