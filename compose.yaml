@@ -4,7 +4,8 @@ services:
     restart: unless-stopped
     env_file: .env.production
     environment:
-      TZ: Asia/Shanghai
+      # POSIX timezone syntax works in Alpine without an extra tzdata package.
+      TZ: CST-8
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
